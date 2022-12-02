@@ -13,18 +13,63 @@ namespace aoc2022
         {
             var data = File.ReadAllLines(@"data\day1.txt");
 
-            var values = data.Select(r => r.Select(c => Int32.Parse(c.ToString())).ToArray()).ToArray();
+            List<int> cals = new List<int>();
 
-            Console.WriteLine($"Answer is {42}");
+            var values = data.Select(r => r.Length == 0 ? -1 : Int32.Parse(r)).ToArray();
+
+            var acc = 0;
+            foreach (var v in values)
+            {
+                if (v < 0 && acc > 0)
+                {
+                    cals.Add(acc);
+                    acc = 0;
+                }
+                else
+                {
+                    acc += v;
+                }
+            }
+
+            if (acc > 0)
+            {
+                cals.Add(acc);
+            }
+
+            Console.WriteLine($"Answer is {cals.Max()}");
         }
 
         public void Part2()
         {
             var data = File.ReadAllLines(@"data\day1.txt");
 
-            var values = data.Select(r => r.Select(c => Int32.Parse(c.ToString())).ToArray()).ToArray();
+            List<int> cals = new List<int>();
 
-            Console.WriteLine($"Answer is {42}");
+            var values = data.Select(r => r.Length == 0 ? -1 : Int32.Parse(r)).ToArray();
+
+            var acc = 0;
+            foreach (var v in values)
+            {
+                if (v < 0 && acc > 0)
+                {
+                    cals.Add(acc);
+                    acc = 0;
+                }
+                else
+                {
+                    acc += v;
+                }
+            }
+
+            if (acc > 0)
+            {
+                cals.Add(acc);
+            }
+
+            cals.Sort();
+            cals.Reverse();
+
+            Console.WriteLine($"Answer is {cals.Take(3).Sum()}");
         }
 
     }
