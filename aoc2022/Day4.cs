@@ -13,18 +13,44 @@ namespace aoc2022
         {
             var data = File.ReadAllLines(@"data\day4.txt");
 
-            var values = data.Select(r => r.Select(c => Int32.Parse(c.ToString())).ToArray()).ToArray();
+            var values = data.Select(r =>
+                r.Split(',').Select(t => t.Split('-').Select(Int32.Parse).ToArray()).ToArray()).ToArray();
 
-            Console.WriteLine($"Answer is {42}");
+            var count = 0;
+
+            foreach (var tuple in values)
+            {
+                if ((tuple[0][0] >= tuple[1][0] && tuple[0][1] <= tuple[1][1]) ||
+                    (tuple[1][0] >= tuple[0][0] && tuple[1][1] <= tuple[0][1]))
+                {
+                    count++;
+                }
+            }
+
+            Console.WriteLine($"Answer is {count}");
         }
 
         public void Part2()
         {
             var data = File.ReadAllLines(@"data\day4.txt");
 
-            var values = data.Select(r => r.Select(c => Int32.Parse(c.ToString())).ToArray()).ToArray();
+            var values = data.Select(r =>
+                r.Split(',').Select(t => t.Split('-').Select(Int32.Parse).ToArray()).ToArray()).ToArray();
 
-            Console.WriteLine($"Answer is {42}");
+            var count = 0;
+
+            foreach (var tuple in values)
+            {
+                if (((tuple[0][0] >= tuple[1][0] && tuple[0][0] <= tuple[1][1]) ||
+                    (tuple[0][1] >= tuple[1][0] && tuple[0][1] <= tuple[1][1])) ||
+                    ((tuple[1][0] >= tuple[0][0] && tuple[1][0] <= tuple[0][1]) ||
+                     (tuple[1][1] >= tuple[0][0] && tuple[1][1] <= tuple[0][1])))
+                {
+                    count++;
+                }
+            }
+
+            Console.WriteLine($"Answer is {count}");
         }
 
     }
