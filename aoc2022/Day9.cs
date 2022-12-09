@@ -79,6 +79,8 @@ namespace aoc2022
             Board[tailPosY, tailPosX]++;
         }
 
+        internal List<Point> TailPositions = new List<Point>();
+
         internal void MovePart2(int dx, int dy)
         {
             Positions[0].X += dx;
@@ -124,7 +126,14 @@ namespace aoc2022
                         Positions[i].Y--;
                     }
 
-                    Positions[i].X = Positions[i-1].X;
+                    if (Positions[i].X < Positions[i - 1].X)
+                    {
+                        Positions[i].X++;
+                    }
+                    else if (Positions[i].X > Positions[i-1].X)
+                    {
+                        Positions[i].X--;
+                    }
                 }
                 else if (Math.Abs(Positions[i].X - Positions[i-1].X) > 1)
                 {
@@ -137,7 +146,14 @@ namespace aoc2022
                         Positions[i].X--;
                     }
 
-                    Positions[i].Y = Positions[i-1].Y;
+                    if (Positions[i].Y < Positions[i - 1].Y)
+                    {
+                        Positions[i].Y++;
+                    }
+                    else if (Positions[i].Y > Positions[i - 1].Y)
+                    {
+                        Positions[i].Y--;
+                    }
                 }
                 else
                 {
@@ -146,7 +162,38 @@ namespace aoc2022
                 }
             }
 
+            if (!TailPositions.Any(p => p.X == Positions[9].X && p.Y == Positions[9].Y))
+            {
+                TailPositions.Add(new Point() { X = Positions[9].X, Y = Positions[9].Y });
+            }
+
             Board[Positions[9].Y, Positions[9].X]++;
+        }
+
+        void PrintBoard()
+        {
+            for (int r = MinPos.Y; r <= MaxPos.Y; r++)
+            {
+                for (int k = MinPos.X; k <= MaxPos.X; k++)
+                {
+                    var any = false;
+                    for (int i = 0; i < 10; i++)
+                    {
+                        if (Positions[i].X == k && Positions[i].Y == r)
+                        {
+                            any = true;
+                            Console.Write($"{i}");
+                            break;
+                        }
+                    }
+                    if (!any)
+                    {
+                        Console.Write(".");
+                    }
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine();
         }
 
         public void Part1()
@@ -194,6 +241,7 @@ namespace aoc2022
         public void Part2()
         {
             var data = File.ReadAllLines(@"data\day9.txt");
+            
             /*
             var data = new string[]
             {
@@ -205,7 +253,21 @@ namespace aoc2022
                 "D 10",
                 "L 25",
                 "U 20",
-            };*/
+            };
+            */
+            /*
+            var data = new string[]
+            {
+                "R 4",
+                "U 4",
+                "L 3",
+                "D 1",
+                "R 4",
+                "D 1",
+                "L 5",
+                "R 2",
+            };
+            */
 
             var values = data.Select(r => r.Split(' ')).ToArray();
 
@@ -243,12 +305,15 @@ namespace aoc2022
                 for (int i = 0; i < Int32.Parse(move[1]); i++)
                 {
                     MovePart2(dx, dy);
+                    //PrintBoard();
                 }
             }
 
             var sum = Board.Cast<int>().Count(v => v > 0);
 
             Console.WriteLine($"MinPos X: {MinPos.X} Y: {MinPos.Y} MaxPos X: {MaxPos.X} Y: {MaxPos.Y}");
+
+            Console.WriteLine($"TailPositions: {TailPositions.Count}");
 
             Console.WriteLine($"Answer is {sum}");
         }
