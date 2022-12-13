@@ -6,14 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using aoc2022.Structs;
+
 namespace aoc2022
 {
-    internal struct Point
-    {
-        public int X;
-        public int Y;
-    };
-
     internal class Day9
     {
         internal const int maxX = 1000;

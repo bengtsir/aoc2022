@@ -10,9 +10,10 @@ namespace aoc2022
     {
         public static void Main(string[] args)
         {
-            new Day10().Part1();
+            new Day13().Part1();
 
-            new Day10().Part2();
+            new Day13().Part2();
         }
     }
 }
+    
