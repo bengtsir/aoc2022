@@ -49,7 +49,7 @@ namespace aoc2022
                 int dx = 0;
                 int dy = 0;
 
-                for (int i = 0; i < line.Length; i++)
+                for (int i = 1; i < line.Length; i++)
                 {
                     var newPoint = new Point(line[i]);
 
