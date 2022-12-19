@@ -27,5 +27,29 @@ namespace aoc2022.Structs
             X = tuple[0];
             Y = tuple[1];
         }
-    };
+    }
+
+    internal class Segment
+    {
+        public int Start { get; set; }
+        public int End { get; set; }
+        public int Length => End - Start + 1;
+
+        public bool Intersects(Segment other)
+        {
+            if (Start >= other.Start && Start <= other.End ||
+                End >= other.Start && End <= other.End)
+            {
+                return true;
+            }
+
+            if (other.Start >= Start && other.Start <= End ||
+                other.End >= Start && other.End <= End)
+            {
+                return true;
+            }
+
+            return false;
+        }
+    }
 }
