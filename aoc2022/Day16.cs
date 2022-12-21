@@ -15,13 +15,50 @@ namespace aoc2022
         public int FlowRate { get; set; }
         public List<Valve> Exits { get; } = new List<Valve>();
         public bool IsOpen { get; set; } = false;
+
+        public int Set { get; set; }
+        public int LastOpenIdx { get; set; } = 100;
+
+        public bool BelongsToSet(int i)
+        {
+            return (Set == i) || (FlowRate == 0);
+        }
+    }
+
+    internal class Move
+    {
+        public int Minute { get; set; }
+        public Valve AValve { get; set; }
+        public Valve EValve { get; set; }
+        public int AAction { get; set; }
+        public int EAction { get; set; }
+
+        public int FlowRate { get; set; }
+
+        internal Move(int m, Valve a, Valve e, int aa, int ea, int fr)
+        {
+            Minute = m;
+            AValve = a;
+            EValve = e;
+            AAction = aa;
+            EAction = ea;
+            FlowRate = fr;
+        }
+
+        public override string ToString()
+        {
+            return $"{Minute}: A: {AValve.Name} E: {EValve.Name} AAction {AAction} EAction {EAction} FlowRate {FlowRate}";
+        }
+
+        public Move Copy()
+        {
+            return new Move(Minute, AValve, EValve, AAction, EAction, FlowRate);
+        }
     }
 
     internal class Day16
     {
         internal Dictionary<string, Valve> Valves = new Dictionary<string, Valve>();
-
-        //internal List<Valve> Valves = new List<Valve>();
 
         internal void Parse(string[] lines)
         {
@@ -75,9 +112,9 @@ namespace aoc2022
             }
         }
 
-        private int MaxReleaseLeft(int minutesLeft)
+        private int MaxReleaseLeft(int minutesLeft, int setIdx)
         {
-            var closedValves = Valves.Values.Where(v => !v.IsOpen && v.FlowRate > 0).OrderBy(v => -v.FlowRate);
+            var closedValves = Valves.Values.Where(v => !v.IsOpen && v.FlowRate > 0 && v.BelongsToSet(setIdx)).OrderBy(v => -v.FlowRate);
 
             var maxReleaseLeft = 0;
             foreach (var valve in closedValves)
@@ -98,13 +135,13 @@ namespace aoc2022
         private int maxRelease = 0;
         private string releasePath = "";
 
-        private void Traverse(string path, Valve v, int currentFlow, int currentRelease, int minutesLeft)
+        private void Traverse(string path, Valve v, int currentFlow, int currentRelease, int minutesLeft, int setIdx, int lastOpen)
         {
             path += v.Name;
 
             if (minutesLeft <= 0)
             {
-                if (maxRelease < currentRelease)
+                if (currentRelease > maxRelease)
                 {
                     maxRelease = currentRelease;
                     releasePath = path;
@@ -113,7 +150,19 @@ namespace aoc2022
                 return;
             }
 
-            if (!v.IsOpen)
+            if (!Valves.Values.Any(vv => !vv.IsOpen && vv.BelongsToSet(setIdx)))
+            {
+                currentRelease += minutesLeft * currentFlow;
+                if (currentRelease > maxRelease)
+                {
+                    maxRelease = currentRelease;
+                    releasePath = path;
+                }
+
+                return;
+            }
+
+            if (!v.IsOpen && v.BelongsToSet(setIdx))
             {
                 // "Open and run through" case
 
@@ -121,6 +170,9 @@ namespace aoc2022
 
                 minutesLeft--;
 
+                int lastOpenSave = v.LastOpenIdx;
+                v.LastOpenIdx = minutesLeft;
+
                 currentRelease += currentFlow;
                 currentFlow += v.FlowRate;
 
@@ -133,17 +185,17 @@ namespace aoc2022
                 if (minutesLeft > 0)
                 {
                     // Go through all subnodes, closed first, order by flow
-                    var exits = v.Exits.Where(e => !e.IsOpen).ToList();
-                    exits.AddRange(v.Exits.Where(e => e.IsOpen));
-
+                    var exits = v.Exits.Where(e => !e.IsOpen && e.BelongsToSet(setIdx) && e.LastOpenIdx > v.LastOpenIdx).ToList();
+                    exits.AddRange(v.Exits.Where(e => e.IsOpen && e.BelongsToSet(setIdx) && e.LastOpenIdx > v.LastOpenIdx));
+                    
                     foreach (var e in exits)
                     {
                         // Early break
-                        if (currentRelease + (minutesLeft * currentFlow) + MaxReleaseLeft(minutesLeft - 1) <= maxRelease)
+                        if (currentRelease + (minutesLeft * currentFlow) + MaxReleaseLeft(minutesLeft - 1, setIdx) <= maxRelease)
                         {
                             break;
                         }
-                        Traverse(path + "**", e, currentFlow, currentRelease + currentFlow, minutesLeft - 1);
+                        Traverse(path + "**", e, currentFlow, currentRelease + currentFlow, minutesLeft - 1, setIdx, v.LastOpenIdx);
                     }
                 }
 
@@ -151,147 +203,32 @@ namespace aoc2022
                 currentFlow -= v.FlowRate;
                 currentRelease -= currentFlow;
                 minutesLeft++;
+                v.LastOpenIdx = lastOpenSave;
             }
 
             // "Only run through" case
             {
+                int lastOpenSave = v.LastOpenIdx;
+                v.LastOpenIdx = lastOpen;
+
                 // Go through all subnodes, closed first, order by flow
-                var exits = v.Exits.Where(e => !e.IsOpen).ToList();
-                exits.AddRange(v.Exits.Where(e => e.IsOpen));
+                var exits = v.Exits.Where(e => !e.IsOpen && e.BelongsToSet(setIdx) && e.LastOpenIdx > v.LastOpenIdx).ToList();
+                exits.AddRange(v.Exits.Where(e => e.IsOpen && e.BelongsToSet(setIdx) && e.LastOpenIdx > v.LastOpenIdx));
 
                 foreach (var e in exits)
                 {
                     // Early break
-                    if (currentRelease + (minutesLeft * currentFlow) + MaxReleaseLeft(minutesLeft - 1) <= maxRelease)
+                    if (currentRelease + (minutesLeft * currentFlow) + MaxReleaseLeft(minutesLeft - 1, setIdx) <= maxRelease)
                     {
                         break;
                     }
-                    Traverse(path, e, currentFlow, currentRelease + currentFlow, minutesLeft - 1);
+                    Traverse(path, e, currentFlow, currentRelease + currentFlow, minutesLeft - 1, setIdx, lastOpen);
                 }
+
+                v.LastOpenIdx = lastOpenSave;
             }
         }
 
-        private string elephantPath = "";
-
-        private void Traverse2(string path, string epath, Valve v, Valve evalve, int currentFlow, int currentRelease,
-            int minutesLeft)
-        {
-            path += v.Name;
-
-            if (minutesLeft <= 0)
-            {
-                if (maxRelease < currentRelease)
-                {
-                    maxRelease = currentRelease;
-                    releasePath = path;
-                    elephantPath = epath;
-                }
-
-                return;
-            }
-
-            // Case 1: Both open
-            if (!v.IsOpen && !evalve.IsOpen && v != evalve)
-            {
-                v.IsOpen = true;
-                evalve.IsOpen = true;
-
-                minutesLeft--;
-
-                currentRelease += currentFlow;
-                currentFlow += v.FlowRate;
-                currentFlow += evalve.FlowRate;
-
-                if (maxRelease < currentRelease)
-                {
-                    maxRelease = currentRelease;
-                    releasePath = path;
-                }
-
-                if (minutesLeft > 0)
-                {
-                    // Go through all subnodes, closed first, order by flow
-                    /*
-                    var exits = v.Exits.Where(e => !e.IsOpen).ToList();
-                    exits.AddRange(v.Exits.Where(e => e.IsOpen));
-
-                    foreach (var e in exits)
-                    {
-                        var eexits = evalve.Exits.Where(e => !e.IsOpen).ToList();
-                        eexits.AddRange(evalve.Exits.Where(e => e.IsOpen));
-
-                        // Early break
-                        if (currentRelease + (minutesLeft * currentFlow) + MaxReleaseLeft(minutesLeft - 1) <=
-                            maxRelease)
-                        {
-                            break;
-                        }
-
-                        foreach (var eexit in eexits)
-                        {
-                            if (currentRelease + (minutesLeft * currentFlow) + MaxReleaseLeft(minutesLeft - 1) <=
-                                maxRelease)
-                            {
-                                break;
-                            }
-
-                            Traverse2(path, epath, e, eexit, currentFlow, currentRelease + currentFlow,
-                                minutesLeft - 1);
-                        }
-                    }
-                    */
-                }
-
-                evalve.IsOpen = false;
-                v.IsOpen = false;
-
-                currentFlow -= evalve.FlowRate;
-                currentFlow -= v.FlowRate;
-
-                currentRelease -= currentFlow;
-                minutesLeft++;
-            }
-
-            // Case 2: You open, elephant run
-            if (true)
-            {
-
-            }
-
-            // Go through all subnodes, closed first, order by flow
-            var exits = v.Exits.Where(e => !e.IsOpen).ToList();
-            exits.AddRange(v.Exits.Where(e => e.IsOpen));
-
-            var eexits = evalve.Exits.Where(e => !e.IsOpen).ToList();
-            eexits.AddRange(evalve.Exits.Where(e => e.IsOpen));
-
-            foreach (var e in exits)
-            {
-                // Early break
-                if (currentRelease + (minutesLeft * currentFlow) + MaxReleaseLeft(minutesLeft - 1) <= maxRelease)
-                {
-                    break;
-                }
-
-                foreach (var eexit in eexits)
-                {
-                    if (currentRelease + (minutesLeft * currentFlow) + MaxReleaseLeft(minutesLeft - 1) <= maxRelease)
-                    {
-                        break;
-                    }
-
-                    Traverse2(path, epath, e, eexit, currentFlow, currentRelease + currentFlow, minutesLeft - 1);
-                }
-            }
-    
-            // Case 2: You run, elephant open
-            {
-            }
-            // Case 3: You open, elephant run
-            // Case 4: Both open
-
-
-        }
 
         public void Part1()
         {
@@ -317,9 +254,7 @@ namespace aoc2022
 
             var startValve = Valves["AA"];
 
-            var mr = MaxReleaseLeft(30);
-
-            Traverse("", startValve, 0, 0, 30);
+            Traverse("", startValve, 0, 0, 30, 0, 35);
 
             Console.WriteLine($"Answer is {maxRelease}");
             Console.WriteLine($"Path: {releasePath}");
@@ -329,10 +264,63 @@ namespace aoc2022
         {
             var data = File.ReadAllLines(@"data\day16.txt");
 
-            var values = data.Select(r => r.Select(c => Int32.Parse(c.ToString())).ToArray()).ToArray();
+            /*
+            var data = new string[]
+            {
+                "Valve AA has flow rate=0; tunnels lead to valves DD, II, BB",
+                "Valve BB has flow rate=13; tunnels lead to valves CC, AA",
+                "Valve CC has flow rate=2; tunnels lead to valves DD, BB",
+                "Valve DD has flow rate=20; tunnels lead to valves CC, AA, EE",
+                "Valve EE has flow rate=3; tunnels lead to valves FF, DD",
+                "Valve FF has flow rate=0; tunnels lead to valves EE, GG",
+                "Valve GG has flow rate=0; tunnels lead to valves FF, HH",
+                "Valve HH has flow rate=22; tunnel leads to valve GG",
+                "Valve II has flow rate=0; tunnels lead to valves AA, JJ",
+                "Valve JJ has flow rate=21; tunnel leads to valve II",
+            };
+            */
 
-            Console.WriteLine($"Answer is {42}");
+            Parse(data);
+
+            var valvesToOpen = Valves.Values.Count(vv => vv.FlowRate > 0);
+
+            var startValve = Valves["AA"];
+
+            var maxMax = 0;
+
+            for (long bitMask = 0; bitMask < (1 << valvesToOpen); bitMask++)
+            {
+                if ((bitMask % 250) == 0)
+                {
+                    Console.WriteLine($"Iter {bitMask} / {1 << valvesToOpen}");
+                }
+                long mask = 1;
+                foreach (var valve in Valves.Values.Where(vv => vv.FlowRate > 0))
+                {
+                    valve.Set = (bitMask & mask) > 0 ? 1 : 0;
+                    mask <<= 1;
+                }
+
+                maxRelease = 0;
+
+                Traverse("", startValve, 0, 0, 26, 0, 30);
+
+                var releaseLeft = maxRelease;
+
+                maxRelease = 0;
+
+                Traverse("", startValve, 0, 0, 26, 1, 30);
+
+                var releaseRight = maxRelease;
+
+                if (releaseLeft + releaseRight > maxMax)
+                {
+                    maxMax = releaseLeft + releaseRight;
+                    Console.WriteLine($"Found new max at iter {bitMask}: {releaseLeft} + {releaseRight} = {maxMax}");
+                }
+            }
+
+            Console.WriteLine($"Answer is {maxMax}");
         }
-
     }
 }

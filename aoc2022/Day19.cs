@@ -122,125 +122,8 @@ namespace aoc2022
 
             return e;
         }
-
+        
         public void Dive(int minutesLeft)
-        {
-            Nodes++;
-
-            if (minutesLeft == 0)
-            {
-                if (R.Geodes >= MaxGeodes)
-                {
-                    MaxGeodes = R.Geodes;
-                    MaxGeodesBlueprint = CurrentBlueprint.BlueprintNumber;
-                }
-
-                return;
-            }
-
-            /*
-            int maxEstClay = R.Clay + B.Clay * (minutesLeft - 1) + (minutesLeft * (minutesLeft - 1) / 2);
-
-            int maxEstObsidian = R.Obsidian + B.Obsidian * (minutesLeft - 1) +
-                                 (maxEstClay / CurrentBlueprint.ObsidianBotCostClay) * (minutesLeft - 1);
-
-            int maxEstClayRate = B.Clay + (minutesLeft * (minutesLeft - 1) / 2);
-            if (maxEstClayRate == 0)
-            {
-                maxEstClayRate = 1;
-            }
-
-            int maxEstClay = R.Clay + B.Clay * (minutesLeft - 1) + (minutesLeft * (minutesLeft - 1) / 2);
-
-            */
-
-            int maxEstObsidianRate = B.Obsidian + (minutesLeft * (minutesLeft - 1) / 2);
-            if (maxEstObsidianRate == 0)
-            {
-                maxEstObsidianRate = 1;
-            }
-
-            int maxEstObsidian = R.Obsidian + B.Obsidian * (minutesLeft - 1) +
-                                 //E(maxEstClay, maxEstClayRate, CurrentBlueprint.ObsidianBotCostClay, minutesLeft);
-                                 (minutesLeft * (minutesLeft - 1) / 2);
-
-            int maxEstGeodes = R.Geodes + B.Geodes * (minutesLeft - 1) +
-                               E(maxEstObsidian, maxEstObsidianRate, CurrentBlueprint.GeodeBotCostObsidian, minutesLeft);
-                               //(maxEstObsidian / CurrentBlueprint.GeodeBotCostObsidian) * (minutesLeft - 1);
-
-            //if (R.Geodes + B.Geodes * minutesLeft + minutesLeft*(minutesLeft + 1)/2 < MaxGeodes)
-            if (maxEstGeodes < MaxGeodes)
-            {
-                // Cutoff
-                return;
-            }
-
-            if (CurrentBlueprint.CanBuyGeodeBot(R))
-            {
-                R.Ore -= CurrentBlueprint.GeodeBotCostOre;
-                R.Obsidian -= CurrentBlueprint.GeodeBotCostObsidian;
-                R.AddOutput(B);
-                B.Geodes++;
-
-                Dive(minutesLeft-1);
-
-                B.Geodes--;
-                R.RemoveOutput(B);
-                R.Obsidian += CurrentBlueprint.GeodeBotCostObsidian;
-                R.Ore += CurrentBlueprint.GeodeBotCostOre;
-            }
-
-            if (CurrentBlueprint.CanBuyObsidianBot(R))
-            {
-                R.Ore -= CurrentBlueprint.ObsidianBotCostOre;
-                R.Clay -= CurrentBlueprint.ObsidianBotCostClay;
-                R.AddOutput(B);
-                B.Obsidian++;
-
-                Dive(minutesLeft - 1);
-
-                B.Obsidian--;
-                R.RemoveOutput(B);
-                R.Clay += CurrentBlueprint.ObsidianBotCostClay;
-                R.Ore += CurrentBlueprint.ObsidianBotCostOre;
-            }
-
-            if (CurrentBlueprint.CanBuyClayBot(R))
-            {
-                R.Ore -= CurrentBlueprint.ClayBotCost;
-                R.AddOutput(B);
-                B.Clay++;
-
-                Dive(minutesLeft - 1);
-
-                B.Clay--;
-                R.RemoveOutput(B);
-                R.Ore += CurrentBlueprint.ClayBotCost;
-            }
-
-            if (CurrentBlueprint.CanBuyOreBot(R))
-            {
-                R.Ore -= CurrentBlueprint.OreBotCost;
-                R.AddOutput(B);
-                B.Ore++;
-
-                Dive(minutesLeft - 1);
-
-                B.Ore--;
-                R.RemoveOutput(B);
-                R.Ore += CurrentBlueprint.OreBotCost;
-            }
-
-            // Final case, just go
-            if (true)
-            {
-                R.AddOutput(B);
-                Dive(minutesLeft - 1);
-                R.RemoveOutput(B);
-            }
-        }
-
-        public void Dive2(int minutesLeft)
         {
             Nodes++;
 
@@ -339,7 +222,7 @@ namespace aoc2022
                 R.AddOutput(B);
                 B.Geodes++;
 
-                Dive2(minutesLeft - 1);
+                Dive(minutesLeft - 1);
 
                 B.Geodes--;
                 R.RemoveOutput(B);
@@ -354,7 +237,7 @@ namespace aoc2022
                 R.AddOutput(B);
                 B.Obsidian++;
 
-                Dive2(minutesLeft - 1);
+                Dive(minutesLeft - 1);
 
                 B.Obsidian--;
                 R.RemoveOutput(B);
@@ -368,7 +251,7 @@ namespace aoc2022
                 R.AddOutput(B);
                 B.Clay++;
 
-                Dive2(minutesLeft - 1);
+                Dive(minutesLeft - 1);
 
                 B.Clay--;
                 R.RemoveOutput(B);
@@ -381,7 +264,7 @@ namespace aoc2022
                 R.AddOutput(B);
                 B.Ore++;
 
-                Dive2(minutesLeft - 1);
+                Dive(minutesLeft - 1);
 
                 B.Ore--;
                 R.RemoveOutput(B);
@@ -392,7 +275,7 @@ namespace aoc2022
             if (true)
             {
                 R.AddOutput(B);
-                Dive2(minutesLeft - 1);
+                Dive(minutesLeft - 1);
                 R.RemoveOutput(B);
             }
         }
@@ -430,7 +313,7 @@ namespace aoc2022
 
                 Nodes = 0;
 
-                Dive2(24);
+                Dive(24);
 
                 MaxGeodeCounts[blueprint.BlueprintNumber - 1] = MaxGeodes;
 
@@ -485,7 +368,7 @@ namespace aoc2022
 
                     Nodes = 0;
 
-                    Dive2(depth);
+                    Dive(depth);
 
                     MaxGeodeCounts[blueprint.BlueprintNumber - 1] = MaxGeodes;
 
