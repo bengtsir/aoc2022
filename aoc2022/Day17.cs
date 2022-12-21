@@ -4,267 +4,105 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.XPath;
 
 namespace aoc2022
 {
-    internal class Rock
+    internal class BitRock
     {
-        // -, +, L, I, o
-        public int Type { get; set; }
+        public int Type { get; }
+        public byte[] Rep { get; }
 
-        public int XPos { get; set; }
-
-        public int YPos { get; set; } // Bottom of rock
-
-        public Rock(int type, int xPos, int yPos)
+        public BitRock(int type)
         {
             Type = type;
-            XPos = xPos;
-            YPos = yPos;
+
+            Rep = new byte[4];
+
+            Reset();
         }
 
-        public void Nudge(char dir, int[][] cave)
+        public void Reset()
         {
-            if (dir == '>')
+            switch (Type)
             {
-                NudgeRight(cave);
+                case 0:
+                    Rep[0] = 0b0011110;
+                    break;
+                case 1:
+                    Rep[0] = 0b0001000;
+                    Rep[1] = 0b0011100;
+                    Rep[2] = 0b0001000;
+                    break;
+                case 2:
+                    Rep[0] = 0b0011100;
+                    Rep[1] = 0b0000100;
+                    Rep[2] = 0b0000100;
+                    break;
+                case 3:
+                    Rep[0] = 0b0010000;
+                    Rep[1] = 0b0010000;
+                    Rep[2] = 0b0010000;
+                    Rep[3] = 0b0010000;
+                    break;
+                case 4:
+                    Rep[0] = 0b0011000;
+                    Rep[1] = 0b0011000;
+                    break;
             }
-            else if (dir == '<')
+        }
+
+        public void Nudge(char dir, byte[] cave, int ypos)
+        {
+            if (dir == '<')
             {
-                NudgeLeft(cave);
+                if (((Rep[0] | Rep[1] | Rep[2] | Rep[3]) & 0b1000000) != 0)
+                {
+                    return;
+                }
+                for (int i = 0; i < 4; i++)
+                {
+                    if (((Rep[i] << 1) & cave[ypos + i]) != 0)
+                    {
+                        return;
+                    }
+                }
+                for (int i = 0; i < 4; i++)
+                {
+                    Rep[i] <<= 1;
+                }
             }
             else
             {
-                throw new Exception("Invalid nudge");
+                if (((Rep[0] | Rep[1] | Rep[2] | Rep[3]) & 0b0000001) != 0)
+                {
+                    return;
+                }
+                for (int i = 0; i < 4; i++)
+                {
+                    if (((Rep[i] >> 1) & cave[ypos + i]) != 0)
+                    {
+                        return;
+                    }
+                }
+                for (int i = 0; i < 4; i++)
+                {
+                    Rep[i] >>= 1;
+                }
             }
         }
 
-        public void NudgeLeft(int[][] cave)
+        public bool DropTest(byte[] cave, int ypos)
         {
-            if (XPos == 0)
+            for (int i = 0; i < 4; i++)
             {
-                return;
+                if ((Rep[i] & cave[ypos + i]) != 0)
+                {
+                    return false;
+                }
             }
-
-            switch (Type)
-            {
-                case 0:
-                    if (cave[XPos - 1][YPos] == 0)
-                    {
-                        XPos--;
-                    }
-
-                    break;
-                case 1:
-                    if (cave[XPos][YPos] == 0 &&
-                        cave[XPos - 1][YPos + 1] == 0 &&
-                        cave[XPos][YPos + 2] == 0)
-                    {
-                        XPos--;
-                    }
-
-                    break;
-                case 2:
-                    if (cave[XPos-1][YPos] == 0 &&
-                        cave[XPos+1][YPos + 1] == 0 &&
-                        cave[XPos+1][YPos + 2] == 0)
-                    {
-                        XPos--;
-                    }
-
-                    break;
-                case 3:
-                    if (cave[XPos - 1][YPos] == 0 &&
-                        cave[XPos - 1][YPos + 1] == 0 &&
-                        cave[XPos - 1][YPos + 2] == 0 &&
-                        cave[XPos - 1][YPos + 3] == 0)
-                    {
-                        XPos--;
-                    }
-
-                    break;
-                case 4:
-                    if (cave[XPos - 1][YPos] == 0 &&
-                        cave[XPos - 1][YPos + 1] == 0)
-                    {
-                        XPos--;
-                    }
-
-                    break;
-            }
-        }
-
-        public void NudgeRight(int[][] cave)
-        {
-            switch (Type)
-            {
-                case 0:
-                    if (XPos >= 3)
-                    {
-                        return;
-                    }
-
-                    if (cave[XPos + 4][YPos] == 0)
-                    {
-                        XPos++;
-                    }
-
-                    break;
-                case 1:
-                    if (XPos >= 4)
-                    {
-                        return;
-                    }
-
-                    if (cave[XPos + 2][YPos] == 0 &&
-                        cave[XPos + 3][YPos + 1] == 0 &&
-                        cave[XPos + 2][YPos + 2] == 0)
-                    {
-                        XPos++;
-                    }
-
-                    break;
-                case 2:
-                    if (XPos >= 4)
-                    {
-                        return;
-                    }
-
-                    if (cave[XPos + 3][YPos] == 0 &&
-                        cave[XPos + 3][YPos + 1] == 0 &&
-                        cave[XPos + 3][YPos + 2] == 0)
-                    {
-                        XPos++;
-                    }
-
-                    break;
-                case 3:
-                    if (XPos >= 6)
-                    {
-                        return;
-                    }
-
-                    if (cave[XPos + 1][YPos] == 0 &&
-                        cave[XPos + 1][YPos + 1] == 0 &&
-                        cave[XPos + 1][YPos + 2] == 0 &&
-                        cave[XPos + 1][YPos + 3] == 0)
-                    {
-                        XPos++;
-                    }
-
-                    break;
-                case 4:
-                    if (XPos >= 5)
-                    {
-                        return;
-                    }
-
-                    if (cave[XPos + 2][YPos] == 0 &&
-                        cave[XPos + 2][YPos + 1] == 0)
-                    {
-                        XPos++;
-                    }
-
-                    break;
-            }
-        }
-
-        public bool Drop(int[][] cave)
-        {
-            switch (Type)
-            {
-                case 0:
-                    if (cave[XPos][YPos - 1] == 0 &&
-                        cave[XPos + 1][YPos - 1] == 0 &&
-                        cave[XPos + 2][YPos - 1] == 0 &&
-                        cave[XPos + 3][YPos - 1] == 0)
-                    {
-                        YPos--;
-                    }
-                    else
-                    {
-                        cave[XPos][YPos] = 1;
-                        cave[XPos + 1][YPos] = 1;
-                        cave[XPos + 2][YPos] = 1;
-                        cave[XPos + 3][YPos] = 1;
-                        return true;
-                    }
-
-                    break;
-                case 1:
-                    if (cave[XPos][YPos] == 0 &&
-                        cave[XPos + 1][YPos - 1] == 0 &&
-                        cave[XPos + 2][YPos] == 0)
-                    {
-                        YPos--;
-                    }
-                    else
-                    {
-                        cave[XPos][YPos + 1] = 1;
-                        cave[XPos + 1][YPos] = 1;
-                        cave[XPos + 1][YPos + 1] = 1;
-                        cave[XPos + 1][YPos + 2] = 1;
-                        cave[XPos + 2][YPos + 1] = 1;
-                        return true;
-                    }
-
-                    break;
-                case 2:
-                    if (cave[XPos][YPos - 1] == 0 &&
-                        cave[XPos + 1][YPos - 1] == 0 &&
-                        cave[XPos + 2][YPos - 1] == 0)
-                    {
-                        YPos--;
-                    }
-                    else
-                    {
-                        cave[XPos][YPos] = 1;
-                        cave[XPos + 1][YPos] = 1;
-                        cave[XPos + 2][YPos] = 1;
-                        cave[XPos + 2][YPos + 1] = 1;
-                        cave[XPos + 2][YPos + 2] = 1;
-                        return true;
-                    }
-
-                    break;
-                case 3:
-                    if (cave[XPos][YPos - 1] == 0)
-                    {
-                        YPos--;
-                    }
-                    else
-                    {
-                        cave[XPos][YPos] = 1;
-                        cave[XPos][YPos + 1] = 1;
-                        cave[XPos][YPos + 2] = 1;
-                        cave[XPos][YPos + 3] = 1;
-                        return true;
-                    }
-
-                    break;
-                case 4:
-                    if (cave[XPos][YPos - 1] == 0 &&
-                        cave[XPos + 1][YPos - 1] == 0)
-                    {
-                        YPos--;
-                    }
-                    else
-                    {
-                        cave[XPos][YPos] = 1;
-                        cave[XPos][YPos + 1] = 1;
-                        cave[XPos + 1][YPos] = 1;
-                        cave[XPos + 1][YPos + 1] = 1;
-                        return true;
-                    }
-
-                    break;
-            }
-
-            return false;
+            return true;
         }
     }
-
 
     internal class Day17
     {
@@ -272,8 +110,6 @@ namespace aoc2022
         internal int pushIdx = 0;
 
         internal const int MaxHeight = 100000;
-
-        internal long Reductions = 0;
 
         internal char NextPush()
         {
@@ -287,31 +123,21 @@ namespace aoc2022
             return c;
         }
 
-        private int[][] Cave = new int[7][];
+        private byte[] Cave = new byte[MaxHeight];
 
         internal void BuildCave()
         {
-            for (int i = 0; i < 7; i++)
-            {
-                Cave[i] = new int[MaxHeight];
-                Cave[i][0] = 1; // Floor
-            }
+            Cave[0] = 0b1111111; // Floor
         }
 
-        internal int CaveHeight()
-        {
-            for (int i = MaxHeight - 1; i >= 0; i--)
-            {
-                for (int j = 0; j < 7; j++)
-                {
-                    if (Cave[j][i] != 0)
-                    {
-                        return i + 1;
-                    }
-                }
-            }
+        internal int CaveHeight = 1;
 
-            return 0;
+        internal void UpdateHeight()
+        {
+            while (Cave[CaveHeight] != 0)
+            {
+                CaveHeight++;
+            }
         }
 
         public void Part1()
@@ -331,137 +157,149 @@ namespace aoc2022
 
             int rockType = 0;
 
-            for (int i = 0; i < 2022; i++)
-            {
-                var h = CaveHeight();
-                var r = new Rock(rockType, 2, h + 3);
-                rockType = (rockType + 1) % 5;
+            var rocks = new BitRock[5];
 
-                r.Nudge(NextPush(), Cave);
-                while (!r.Drop(Cave))
-                {
-                    r.Nudge(NextPush(), Cave);
-                }
+            for (int i = 0; i < 5; i++)
+            {
+                rocks[i] = new BitRock(i);
             }
 
-            Console.WriteLine($"Answer is {CaveHeight()-1}");
+            for (int i = 0; i < 2022; i++)
+            {
+                var r = rocks[rockType];
+                r.Reset();
+
+                rockType = (rockType + 1) % 5;
+
+                var ypos = CaveHeight + 3;
+
+                r.Nudge(NextPush(), Cave, ypos);
+                while (r.DropTest(Cave, ypos - 1))
+                {
+                    ypos--;
+                    r.Nudge(NextPush(), Cave, ypos);
+                }
+
+                for (int k = 0; k < 4; k++)
+                {
+                    Cave[ypos + k] |= r.Rep[k];
+                }
+
+                UpdateHeight();
+            }
+
+            Console.WriteLine($"Answer is {CaveHeight - 1}");
         }
 
         public void Part2()
         {
-            //var data = File.ReadAllLines(@"data\day17.txt");
+            var data = File.ReadAllLines(@"data\day17.txt");
 
-            
+            /*
             var data = new string[]
             {
                 ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"
             };
-            
+            */
 
             Pushes = data.Select(r => r.Select(c => c).ToArray()).First().ToArray();
 
+            var periods = 5;
+
+            var maxPeriod = Pushes.Length * 5;
+
+            var caveSize = periods * 4 * maxPeriod + 1000;
+
+            var rocksToDrop = periods * maxPeriod + 10;
+
+            Cave = new byte[caveSize];
+
+            var heightDiff = new byte[rocksToDrop];
+
             BuildCave();
-
-            const int MaxIter = 16384;
-
-            double[] HeightAdd = new double[MaxIter];
-            int[] Heights = new int[MaxIter];
 
             int rockType = 0;
 
-            for (long i = 0; i < MaxIter; i++)
+            var rocks = new BitRock[5];
+
+            for (int i = 0; i < 5; i++)
             {
-                var h = CaveHeight();
-                var r = new Rock(rockType, 2, h + 3);
+                rocks[i] = new BitRock(i);
+            }
+
+            Console.WriteLine($"maxPeriod: {maxPeriod}, caveSize: {caveSize}");
+
+            for (int i = 0; i < rocksToDrop; i++)
+            {
+                var r = rocks[rockType];
+                r.Reset();
+
                 rockType = (rockType + 1) % 5;
 
-                r.Nudge(NextPush(), Cave);
-                while (!r.Drop(Cave))
+                var ypos = CaveHeight + 3;
+
+                r.Nudge(NextPush(), Cave, ypos);
+                while (r.DropTest(Cave, ypos - 1))
                 {
-                    r.Nudge(NextPush(), Cave);
+                    ypos--;
+                    r.Nudge(NextPush(), Cave, ypos);
                 }
 
-                HeightAdd[i] = CaveHeight() - h;
-                Heights[i] = h;
-
-                if (h >= MaxHeight - 20)
+                for (int k = 0; k < 4; k++)
                 {
+                    Cave[ypos + k] |= r.Rep[k];
+                }
+
+                var oldHeight = CaveHeight;
+                UpdateHeight();
+
+                heightDiff[i] = (byte)(CaveHeight - oldHeight);
+
+                if (CaveHeight > caveSize - 10)
+                {
+                    Console.WriteLine($"Max height reached at rock {i}");
                     break;
                 }
             }
 
-            for (int i = 0; i < MaxIter; i++)
-            {
-                Console.Write($"{HeightAdd[i]}, ");
-            }
-            Console.WriteLine();
+            int junk = maxPeriod;
 
-            double[] fftMag = FftSharp.Transform.FFTmagnitude(HeightAdd);
+            var period = 0;
 
-            for (int i = 0; i < fftMag.Length; i++)
+            for (int stride = 100; stride < maxPeriod + 2; stride++)
             {
-                Console.WriteLine($"{i}: {fftMag[i]}");
-                if (i % 100 == 0)
+                int hd = heightDiff[junk];
+                var found = true;
+
+                for (int i = 0; i < stride; i++)
                 {
-                    var x = 0;
-                }
-            }
-
-            Console.WriteLine("---------------");
-
-            double maxPeak = 0;
-            int maxPeakIdx = 0;
-
-            for (int i = 1; i < fftMag.Length - 1; i++)
-            {
-                if (fftMag[i-1] < fftMag[i] && fftMag[i] > fftMag[i+1])
-                {
-                    Console.WriteLine($"Peak at {i} with mag {fftMag[i]}");
-                    if (fftMag[i] > maxPeak)
+                    if (heightDiff[junk + i] != heightDiff[stride + junk + i])
                     {
-                        maxPeak = fftMag[i];
-                        maxPeakIdx = i;
+                        found = false;
+                        break;
+                    }
+                    if (heightDiff[junk + i] != heightDiff[stride + stride + junk + i])
+                    {
+                        found = false;
+                        break;
                     }
                 }
+
+                if (found)
+                {
+                    Console.WriteLine($"Found period at stride = {stride}");
+                    period = stride;
+                    break;
+                }
             }
 
-            long totHeight;
+            var initialSum = heightDiff.Take(junk).Select(b => (long)b).Sum();
+            var periodSum = heightDiff.Skip(junk).Take(period).Select(b => (long)b).Sum();
+            var calcPeriods = (1_000_000_000_000 - junk) / period;
+            var restLength = (1_000_000_000_000 - junk) % period;
+            var restSum = heightDiff.Skip(junk + period).Take((int)restLength).Select(b => (long)b).Sum();
 
-            const long totIter = 1_000_000_000_000;
-
-            totHeight = (totIter / maxPeakIdx) * Heights[maxPeakIdx] +
-                        Heights[totIter % maxPeakIdx];
-            Console.WriteLine($"Answer is {totHeight}");
-
-            totHeight = (totIter / maxPeakIdx) * Heights[maxPeakIdx-1] +
-                        Heights[totIter % maxPeakIdx];
-            Console.WriteLine($"Answer is {totHeight}");
-
-            totHeight = ((totIter / maxPeakIdx)-1) * Heights[maxPeakIdx] +
-                        Heights[totIter % maxPeakIdx];
-            Console.WriteLine($"Answer is {totHeight}");
-
-            totHeight = ((totIter / maxPeakIdx)-1) * Heights[maxPeakIdx-1] +
-                        Heights[totIter % maxPeakIdx];
-            Console.WriteLine($"Answer is {totHeight}");
-
-            totHeight = (totIter / maxPeakIdx) * Heights[maxPeakIdx] +
-                        Heights[totIter % maxPeakIdx];
-            Console.WriteLine($"Answer is {totHeight}");
-
-            var periodSum = (long)(HeightAdd.Skip(maxPeakIdx).Take(maxPeakIdx).Sum());
-
-            var rest = totIter % maxPeakIdx;
-
-            totHeight = ((long)HeightAdd.Take(maxPeakIdx).Sum()) + ((totIter-1)*periodSum) + (long)(HeightAdd.Skip(2*maxPeakIdx).Take((int)rest).Sum());
-            Console.WriteLine($"Answer is {totHeight}");
-
-            totHeight = ((long)HeightAdd.Take(maxPeakIdx).Sum()) + ((totIter / maxPeakIdx - 2) * periodSum) + (long)(HeightAdd.Skip(2 * maxPeakIdx).Take((int)rest).Sum());
-            Console.WriteLine($"Answer is {totHeight}");
-
-            totHeight = ((long)HeightAdd.Take(maxPeakIdx).Sum()) + ((totIter / maxPeakIdx - 1) * periodSum) + (long)(HeightAdd.Skip(2 * maxPeakIdx).Take((int)rest).Sum());
-            Console.WriteLine($"Answer is {totHeight}");
+            Console.WriteLine($"Answer is {initialSum} + {calcPeriods}*{periodSum} + {restSum} = {initialSum + calcPeriods * periodSum + restSum}");
         }
-
     }
 }

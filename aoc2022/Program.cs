@@ -10,11 +10,9 @@ namespace aoc2022
     {
         public static void Main(string[] args)
         {
-            new Day21().Part1();
-
-            //Console.ReadLine();
+            new Day17().Part1();
             
-            new Day21().Part2();
+            new Day17().Part2();
 
             Console.ReadLine();
         }
