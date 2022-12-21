@@ -14,7 +14,11 @@ namespace aoc2022
         public long Value { get; set; } = -1;
         public bool IsConstant { get; set; } = false;
         public string Op1 { get; set; }
+        public MonkeyCalculator M1 { get; set; }
+
         public string Op2 { get; set; }
+        public MonkeyCalculator M2 { get; set; }
+
         public char Op { get; set; }
         public bool Done { get; set; }
         public bool IsRoot => Name == "root";
@@ -23,6 +27,30 @@ namespace aoc2022
         public void Reset()
         {
             Done = IsConstant;
+        }
+
+        public override string ToString()
+        {
+            if (IsConstant || !ContainsHuman())
+            {
+                return $"{Name}:{Value}";
+            }
+            return $"{Name}:({M1}{Op}{M2})";
+        }
+
+        public bool ContainsHuman()
+        {
+            if (IsHuman)
+            {
+                return true;
+            }
+
+            if (IsConstant)
+            {
+                return false;
+            }
+
+            return M1.ContainsHuman() || M2.ContainsHuman();
         }
     }
 
@@ -129,53 +157,39 @@ namespace aoc2022
             Console.WriteLine($"Answer is {Monkeys["root"].Value}");
         }
 
-        public bool SubtreeContainsHuman(string node, bool calc = false)
+        public void CalcTree(string node)
         {
             var m = Monkeys[node];
 
-            if (m.IsHuman)
-            {
-                return true;
-            }
-
             if (m.IsConstant)
             {
-                return false;
+                return;
             }
 
-            if (calc)
+            m.M1 = Monkeys[m.Op1];
+            m.M2 = Monkeys[m.Op2];
+
+            CalcTree(m.Op1);
+            CalcTree(m.Op2);
+
+            long v1 = m.M1.Value;
+            long v2 = m.M2.Value;
+
+            switch (m.Op)
             {
-                var s1 = SubtreeContainsHuman(m.Op1);
-                var s2 = SubtreeContainsHuman(m.Op2);
-
-                if (Monkeys[m.Op1].Done && Monkeys[m.Op2].Done)
-                {
-                    long v1 = Monkeys[m.Op1].Value;
-                    long v2 = Monkeys[m.Op2].Value;
-
-                    switch (m.Op)
-                    {
-                        case '+':
-                            m.Value = v1 + v2;
-                            break;
-                        case '-':
-                            m.Value = v1 - v2;
-                            break;
-                        case '*':
-                            m.Value = v1 * v2;
-                            break;
-                        case '/':
-                            m.Value = v1 / v2;
-                            break;
-                    }
-
-                    m.Done = true;
-                }
-
-                return s1 || s2;
+                case '+':
+                    m.Value = v1 + v2;
+                    break;
+                case '-':
+                    m.Value = v1 - v2;
+                    break;
+                case '*':
+                    m.Value = v1 * v2;
+                    break;
+                case '/':
+                    m.Value = v1 / v2;
+                    break;
             }
-
-            return SubtreeContainsHuman(m.Op1) || SubtreeContainsHuman(m.Op2);
         }
 
         public void BreakItDown(string node, long targetVal)
@@ -185,14 +199,22 @@ namespace aoc2022
             if (m.IsHuman)
             {
                 m.Value = targetVal;
+                return;
             }
 
-            var c1 = Monkeys[m.Op1].Value;
-            var c2 = Monkeys[m.Op2].Value;
+            var c1 = m.M1.Value;
+            var c2 = m.M2.Value;
 
-            if (SubtreeContainsHuman(m.Op1))
+            if (m.M1.ContainsHuman())
             {
-                // m = H (op) c
+                if (m.M2.ContainsHuman())
+                {
+                    Console.WriteLine(m.ToString());
+
+                    throw new Exception("Double trouble!");
+                }
+
+                // T = H (op) c
                 switch (m.Op)
                 {
                     case '+':
@@ -211,19 +233,14 @@ namespace aoc2022
             }
             else
             {
-                if (SubtreeContainsHuman(m.Op2))
-                {
-                    throw new Exception("Double trouble!");
-                }
-
-                // m = c (op) H
+                // T = c (op) H
                 switch (m.Op)
                 {
                     case '+':
                         BreakItDown(m.Op2, targetVal - c1);
                         break;
                     case '-':
-                        BreakItDown(m.Op2, targetVal + c1);
+                        BreakItDown(m.Op2, c1 - targetVal);
                         break;
                     case '*':
                         BreakItDown(m.Op2, targetVal / c1);
@@ -265,40 +282,15 @@ namespace aoc2022
             var r = Monkeys["root"];
             var h = Monkeys["humn"];
 
-            var s1 = SubtreeContainsHuman(r.Op1, true);
-            var s2 = SubtreeContainsHuman(r.Op2, true);
+            CalcTree("root");
 
-            var dd = new Dictionary<string, int>();
-
-            foreach (var m in Monkeys.Values)
+            if (r.M1.ContainsHuman())
             {
-                dd[m.Name] = 0;
-            }
-
-            foreach (var m in Monkeys.Values)
-            {
-                if (!m.IsConstant)
-                {
-                    dd[m.Op1]++;
-                    dd[m.Op2]++;
-                }
-            }
-
-            foreach (var m in Monkeys.Values)
-            {
-                if (dd[m.Name] > 1)
-                {
-                    Console.WriteLine($"Found dupe: {m.Name}");
-                }
-            }
-
-            if (s1)
-            {
-                BreakItDown(r.Op1, Monkeys[r.Op2].Value);
+                BreakItDown(r.Op1, r.M2.Value);
             }
             else
             {
-                BreakItDown(r.Op2, Monkeys[r.Op1].Value);
+                BreakItDown(r.Op2, r.M1.Value);
             }
 
 
