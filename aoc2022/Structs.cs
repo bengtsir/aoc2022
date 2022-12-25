@@ -27,6 +27,22 @@ namespace aoc2022.Structs
             X = tuple[0];
             Y = tuple[1];
         }
+
+        public override string ToString()
+        {
+            return $"({X},{Y})";
+        }
+
+        public void Offset(int dx, int dy)
+        {
+            X += dx;
+            Y += dy;
+        }
+
+        public int ManhattanDist(Point other)
+        {
+            return Math.Abs(other.X - X) + Math.Abs(other.Y - Y);
+        }
     }
 
     internal class Segment
